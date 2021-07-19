@@ -11,7 +11,12 @@
 
             <form action="" method="POST">
                 {% csrf_token %}
+
+                {{formSet.management_form}}
+                {% for form in formSet %}
                 {{form}}
+                <hr />
+                {% endfor %}
 
                 <input type="submit" name="Submit" value="Submit">
             </form>
