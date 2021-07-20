@@ -30,6 +30,8 @@ def registerPage(request):
             group = Group.objects.get(name='Customer')
             user.groups.add(group)
 
+            Customer.objects.create(user=user, name=user.username)
+
             messages.success(request, 'Account was created for ' + username)
 
             return redirect('login')
@@ -38,7 +40,7 @@ def registerPage(request):
     return render(request, 'accounts/register.html', context)
 
 
-@unauthenticated_user
+@ unauthenticated_user
 def loginPage(request):
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -59,8 +61,8 @@ def logoutUser(request):
     return redirect('login')
 
 
-@login_required(login_url='login')
-@admin_only
+@ login_required(login_url='login')
+@ admin_only
 def home(request):
     orders = Order.objects.all()
     customers = Customer.objects.all()
@@ -77,20 +79,29 @@ def home(request):
     return render(request, 'accounts/dashboard.html', context)
 
 
+@ login_required(login_url='login')
+@ allowed_users(allowed_roles=['Customer'])
 def userPage(request):
-    context = {}
+    orders = request.user.customer.order_set.all()
+
+    total_orders = orders.count()
+    deliveried = orders.filter(status='Delivered').count()
+    pending = orders.filter(status='Pending').count()
+
+    context = {'orders': orders, 'total_orders': total_orders,
+               'deliveried': deliveried, 'pending': pending}
     return render(request, 'accounts/user.html', context)
 
 
-@login_required(login_url='login')
-@allowed_users(allowed_roles=['Admin'])
+@ login_required(login_url='login')
+@ allowed_users(allowed_roles=['Admin'])
 def products(request):
     products = Product.objects.all()
     return render(request, 'accounts/products.html', {'products': products})
 
 
-@login_required(login_url='login')
-@allowed_users(allowed_roles=['Admin'])
+@ login_required(login_url='login')
+@ allowed_users(allowed_roles=['Admin'])
 def customer(request, pk):
     customer = Customer.objects.get(id=pk)
 
@@ -107,16 +118,16 @@ def customer(request, pk):
     return render(request, 'accounts/customer.html', context)
 
 
-@login_required(login_url='login')
-@allowed_users(allowed_roles=['Admin'])
+@ login_required(login_url='login')
+@ allowed_users(allowed_roles=['Admin'])
 def createOrder(request, pk):
     OrderFormSet = inlineformset_factory(
         Customer, Order, fields=('product', 'status'), extra=10)
     customer = Customer.objects.get(id=pk)
     formSet = OrderFormSet(queryset=Order.objects.none(), instance=customer)
-    #form = OrderForm(initial={'customer': customer})
+    # form = OrderForm(initial={'customer': customer})
     if request.method == 'POST':
-        #print('Printing post', request.POST)
+        # print('Printing post', request.POST)
         # form = OrderForm(request.POST)
         formSet = OrderFormSet(request.POST, instance=customer)
         if formSet.is_valid():
@@ -127,13 +138,13 @@ def createOrder(request, pk):
     return render(request, 'accounts/order_form.html', context)
 
 
-@login_required(login_url='login')
-@allowed_users(allowed_roles=['Admin'])
+@ login_required(login_url='login')
+@ allowed_users(allowed_roles=['Admin'])
 def updateOrder(request, pk):
     order = Order.objects.get(id=pk)
     form = OrderForm(instance=order)
     if request.method == 'POST':
-        #print('Printing post', request.POST)
+        # print('Printing post', request.POST)
         form = OrderForm(request.POST, instance=order)
         if form.is_valid():
             form.save()
@@ -142,8 +153,8 @@ def updateOrder(request, pk):
     return render(request, 'accounts/order_form.html', context)
 
 
-@login_required(login_url='login')
-@allowed_users(allowed_roles=['Admin'])
+@ login_required(login_url='login')
+@ allowed_users(allowed_roles=['Admin'])
 def deleteOrder(request, pk):
     order = Order.objects.get(id=pk)
 
